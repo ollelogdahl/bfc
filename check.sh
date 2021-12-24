@@ -21,7 +21,7 @@ for TFILE in tests/*.b ; do
     TESTS_RAN=$((TESTS_RAN+1))
 
     TNAME=$(basename $TFILE .b)
-    DFILE="${TFILE%.*}.t"
+    DFILE="${TFILE%.*}.dat"
 
     echo -en "$TNAME:\t"
 

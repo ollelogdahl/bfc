@@ -44,12 +44,14 @@ for TFILE in tests/*.b ; do
         EXP_STR=""
 
         IN="$TMPDIR/$TNAME"_in
-        touch $IN
-
         OUT="$TMPDIR/$TNAME"_out
         EXP="$TMPDIR/$TNAME"_exp
 
+        touch $IN
+        touch $EXP
+
         SCENARIO_NO=0
+        ENCOUNTERED_FAIL=0
 
         # Read all rules from the data file and evaluate them.
         while IFS="" read -r LINE || [ -n "$LINE" ]; do
@@ -71,7 +73,10 @@ for TFILE in tests/*.b ; do
                 "$TMPDIR/$TNAME" < $IN > $OUT
 
                 cmp -s $OUT $EXP || {
-                    echo fail;
+                    
+                    [ $ENCOUNTERED_FAIL -eq 1 ] || echo fail;
+                    ENCOUNTERED_FAIL=1
+
                     echo "unexpected output (scenario $SCENARIO_NO):";
                     echo -e "\texpected:\t" $(od -x $EXP)
                     echo -e "\tactual:  \t" $(od -x $OUT)
@@ -80,6 +85,8 @@ for TFILE in tests/*.b ; do
                 ;;
             esac
         done < $DFILE
+
+        [ $ENCOUNTERED_FAIL -eq 1 ] && continue;
     fi
 
     echo ok

@@ -153,7 +153,15 @@ void bf_write(asm_info_t *info, FILE *out) {
 }
 
 void bf_read(asm_info_t *info, FILE *out) {
-    assert(false);
+    fprintf(out,
+    "pushq %%rdi" NL
+    "movq %%rdi, %%rsi" NL
+    "movq $1, %%rdx" NL
+    "movq $%d, %%rdi" NL
+    "movq $%d, %%rax" NL
+    "syscall" NL
+    "popq %%rdi" NL
+    , STDIN_FILENO, __NR_read);
 }
 
 void bf_comment(asm_info_t *info, FILE *out, char *fmt, ...) {

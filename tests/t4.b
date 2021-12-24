@@ -1,2 +1,2 @@
-consumes all stdin and writes to stdout
-,[.[-],]
+reads a character and outputs it again
+,.

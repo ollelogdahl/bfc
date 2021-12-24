@@ -86,7 +86,8 @@ int main(const int argc, char *const *argv) {
 
     asm_info_t info = {
         .stack_size = 30000,
-        .debug = debug
+        .debug = debug,
+        .eof_handling = ZERO
     };
 
     if(assemble) {

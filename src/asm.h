@@ -11,6 +11,11 @@
 typedef struct {
     int stack_size;
     bool debug;
+    enum {
+        ZERO,
+        NEGATIVE,
+        UNCHANGED
+    } eof_handling;
 } asm_info_t;
 
 /**

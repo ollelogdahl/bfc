@@ -11,10 +11,12 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <string.h>
 #include <unistd.h>
 #include <asm/unistd_64.h>
 
 #include "err.h"
+#include "branch.h"
 
 #define NL "\n"
 
@@ -28,6 +30,10 @@ void bf_move(asm_info_t *info, FILE *out, int offset);
 void bf_value(asm_info_t *info, FILE *out, int diff);
 void bf_write(asm_info_t *info, FILE *out);
 void bf_read(asm_info_t *info, FILE *out);
+
+void bf_branch_begin(asm_info_t *info, FILE *out, branch_t *b);
+void bf_branch_end(asm_info_t *info, FILE *out, branch_t *b);
+
 void bf_comment(asm_info_t *info, FILE *out, char *fmt, ...);
 
 void bf_to_asm(asm_info_t *info, FILE *in, FILE *out) {
@@ -38,6 +44,8 @@ void bf_to_asm(asm_info_t *info, FILE *in, FILE *out) {
 
     int mov_accum = 0;
     int val_accum = 0;
+
+    branch_t branch_info = BRANCH_INIT;
 
     while(true) {
         int c = fgetc(in);
@@ -81,6 +89,12 @@ void bf_to_asm(asm_info_t *info, FILE *in, FILE *out) {
         case '-':
             if(info->debug) bf_comment(info, out, "-");
             val_accum--;
+            break;
+        case '[':
+            bf_branch_begin(info, out, &branch_info);
+            break;
+        case ']':
+            bf_branch_end(info, out, &branch_info);
             break;
         case '.':
             if(info->debug) bf_comment(info, out, ".");
@@ -137,6 +151,42 @@ void bf_move(asm_info_t *info, FILE *out, int offset) {
 void bf_value(asm_info_t *info, FILE *out, int diff) {
     char *op = (diff > 0) ? "addb" : "subb";
     fprintf(out, "%s $%d, (%%rdi)\n", op, abs(diff));
+}
+
+void bf_branch_begin(asm_info_t *info, FILE *out, branch_t *b) {
+
+    branch_push(b);
+    char *label = branch_get(b);
+
+    if(info->debug) bf_comment(info, out, "[ %s", label);
+
+    fprintf(out,
+    "movb (%%rdi), %%al" NL
+    "cmpb $0, %%al" NL
+    "je b_%s_end" NL
+    "b_%s_start:" NL
+    , label, label);
+
+    free(label);
+}
+
+void bf_branch_end(asm_info_t *info, FILE *out, branch_t *b) {
+    
+    if(branch_empty(b)) error("mismatched brackets. aborting.");
+
+    char *label = branch_get(b);
+    branch_pop(b);
+
+    if(info->debug) bf_comment(info, out, "] %s", label);
+
+    fprintf(out,
+    "movb (%%rdi), %%al" NL
+    "cmpb $0, %%al" NL
+    "jne b_%s_start" NL
+    "b_%s_end:" NL
+    , label, label);
+
+    free(label);
 }
 
 void bf_write(asm_info_t *info, FILE *out) {

@@ -3,7 +3,6 @@
 Olle Lögdahl, 25 December 2021
 
 [![build](https://github.com/ollelogdahl/bfc/actions/workflows/build.yml/badge.svg)](https://github.com/ollelogdahl/bfc/actions/workflows/build.yml)
-[![test](https://github.com/ollelogdahl/bfc/actions/workflows/test.yml/badge.svg)](https://github.com/ollelogdahl/bfc/actions/workflows/test.yml)
 ![licence](https://img.shields.io/github/license/ollelogdahl/bfc)
 
 ---
@@ -14,7 +13,25 @@ assembly into a linkable object. Written as a one day project, it's purely
 for educational purposes.
 
 A part of the challenge was also writing a testssuite in `sh` for testing the
-compiler and the generated binaries.
+compiler and the generated binaries. These can be run with `make test` to output
+the following:
+
+```
+./check.sh out/bfc nocolor
+rot13:  ok
+t10:    ok
+t11:    ok
+t12:    ok
+t1:     ok
+t3:     ok
+t4:     ok
+t5:     ok
+t6:     ok
+t7:     ok
+t8:     ok
+t9:     ok
+ran 14 tests with 79 scenarios.
+```
 
 ## Building & Usage
 

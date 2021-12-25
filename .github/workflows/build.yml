@@ -1,4 +1,4 @@
-name: C CI
+name: Build
 
 on:
   push:
@@ -16,11 +16,3 @@ jobs:
       run: make build
     - name: install
       run: sudo make install
-
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: test
-      run: make test

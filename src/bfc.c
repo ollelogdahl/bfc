@@ -17,7 +17,7 @@
 #include "asm.h"
 #include "err.h"
 
-#define VERSION "0.0.1"
+#define VERSION "0.1.0"
 
 void help(FILE *fp, char *const cmd) {
     fprintf(fp, "usage: %s [-gShv] [-o out_file] file\n"

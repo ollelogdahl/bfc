@@ -63,7 +63,7 @@ char *branch_get(branch_t *b) {
 
         str_off += encode(&str[str_off], BRANCH_HASH_SIZE - str_off, width);
     }
-    str[str_off++] = '\0';
+    str[str_off] = '\0';
 
     return str;
 }

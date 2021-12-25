@@ -116,6 +116,8 @@ pid_t spawn_parser(asm_info_t *info, FILE *in, int *pipe) {
     case 0:
         close(pipe[0]);
         FILE *out = fdopen(pipe[1], "w");
+        if(out == NULL) sys_error("fdopen pipe write-end");
+
         bf_to_asm(info, in, out);
         fclose(out);
 

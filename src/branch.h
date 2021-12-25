@@ -8,7 +8,7 @@
 #include <stdbool.h>
 
 #define MAX_BRANCH_DEPTH 1000
-#define BRANCH_HASH_SIZE 32
+#define BRANCH_HASH_SIZE 1000
 
 typedef struct {
     unsigned depth;

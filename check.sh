@@ -36,7 +36,7 @@ for TFILE in tests/*.b ; do
     LINES=$(wc -l <"$TMPDIR/log")
     
     if [ $RC -ne 0 ] || [ $LINES -gt 0 ]; then
-        "${ERR}fail${NORM}";
+        echo "${ERR}fail${NORM}";
         cat $TMPDIR/log
         continue
     fi

@@ -42,14 +42,12 @@ bfc -gS -o hello.s hello.o
 ### Help
 ```
 bfc [-gShv] [-o file] file
+  S        skips the assembler and only outputs the generated assembly.
+  g        generates assembly with comments about the bf instructions.
+  o file   the file to write the assembly/linkable object to.
+  h        shows this.
+  v        shows the version of the program.
 ```
-
-### Flags
- - S        Skips the assembler and only outputs the generated assembly.
- - g        Generates assembly with comments about the bf instructions.
- - o file   The file to write the assembly/linkable object to.
- - h        Shows this.
- - v        Shows the version of the program.
 
 ## Licensing
 

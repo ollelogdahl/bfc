@@ -20,7 +20,12 @@
 #define VERSION "0.0.1"
 
 void help(FILE *fp, char *const cmd) {
-    fprintf(fp, "usage: %s [-hvg] [-o out] file\n"
+    fprintf(fp, "usage: %s [-gShv] [-o out_file] file\n"
+        "  S        skips the assembler and only outputs the generated assembly.\n"
+        "  g        generates assembly with comments about the bf instructions.\n"
+        "  o file   the file to write the assembly/linkable object to.\n"
+        "  h        shows this.\n"
+        "  v        shows the version of the program.\n\n"
         "Report bugs to: olle@logdahl.net\n"
     , cmd);
 }

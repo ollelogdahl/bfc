@@ -9,7 +9,7 @@
 
 # usage: check.sh out/bfc
 
-if [ $# -le 2 ] || [ $2 != "nocolor" ]; then
+if [ $# -eq 1 ] || [ $2 != "nocolor" ]; then
     ERR=`tput setaf 9`
     INFO=`tput setaf 11`
     OK=`tput setaf 10`

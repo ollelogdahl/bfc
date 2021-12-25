@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,4 +15,7 @@ jobs:
     - name: build
       run: make build
     - name: test
-      run: make test
+      run: |
+        ls
+        echo $PWD
+        make test

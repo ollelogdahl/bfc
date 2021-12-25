@@ -24,6 +24,15 @@
 #define IS_VAL(ch) ((char) ch == '-' || (char) ch == '+')
 #define IS_END(ch) (ch == EOF)
 
+#define DBG_INFO(ai, out, ...) if(ai->debug) bf_comment(ai, out, __VA_ARGS__)
+
+// The mode for normal execution
+#define MODE_NORMAL 0
+
+// The mode entered when a loop is known to never run, and therefore should
+// be skipped.
+#define MODE_SKIP_BRANCH 1
+
 void bf_header(asm_info_t *info, FILE *out);
 void bf_footer(asm_info_t *info, FILE *out);
 void bf_move(asm_info_t *info, FILE *out, int offset);
@@ -36,86 +45,139 @@ void bf_branch_end(asm_info_t *info, FILE *out, branch_t *b);
 
 void bf_comment(asm_info_t *info, FILE *out, char *fmt, ...);
 
+typedef struct {
+    branch_t *branch;
+    int mov_accum;
+    int val_accum;
+    bool skip_next_branch;
+} m_normal_ctx_t;
+
+typedef struct {
+    unsigned branch_depth;
+} m_skip_branch_ctx_t;
+
+void mode_normal(asm_info_t *ai, m_normal_ctx_t *ctx, unsigned char *sptr, int c, FILE *out);
+void mode_skip_branch(asm_info_t *ai, m_skip_branch_ctx_t *ctx, unsigned char *sptr, int c, FILE *out);
+
 void bf_to_asm(asm_info_t *info, FILE *in, FILE *out) {
+
+    branch_t branch_info = BRANCH_INIT;
+    unsigned char state = MODE_NORMAL;
+
+    // Skips the first branch if there are no other operations before it.
+    m_normal_ctx_t normal_ctx = {
+        .branch = &branch_info,
+        .skip_next_branch = true,
+        .mov_accum = 0,
+        .val_accum = 0,
+    };
+
+    m_skip_branch_ctx_t skip_branch_ctx = {
+        .branch_depth = 0
+    };
 
     // Writes the header
     bf_header(info, out);
 
-
-    int mov_accum = 0;
-    int val_accum = 0;
-
-    branch_t branch_info = BRANCH_INIT;
-
     while(true) {
         int c = fgetc(in);
 
-        // if we have a move accumulation, and the character is not a
-        // continuation of that, or is the end, we must output it to the
-        // program.
-        if(mov_accum != 0 && (!IS_MOV(c) || IS_END(c))) {
-            if(info->debug) bf_comment(info, out, "dumping move %d", mov_accum);
-
-            bf_move(info, out, mov_accum);
-            mov_accum = 0;
-        }
-
-        // if we have a value accumulation, and the character is not a
-        // continuation of that, or is the end, we must output it to the
-        // program.
-        if(val_accum != 0 && (!IS_VAL(c) || IS_END(c))) {
-            if(info->debug) bf_comment(info, out, "dumping value %d", val_accum);
-
-            bf_value(info, out, val_accum);
-            val_accum = 0;
-        }
-
-        // Exit parsing if we have reached eof.
-        if(IS_END(c)) break;
-
-        switch ((char) c) {
-        case '>':
-            if(info->debug) bf_comment(info, out, ">");
-            mov_accum++;
+        switch (state) {
+        case MODE_NORMAL:
+            mode_normal(info, &normal_ctx, &state, c, out);
             break;
-        case '<':
-            if(info->debug) bf_comment(info, out, "<");
-            mov_accum--;
-            break;
-        case '+':
-            if(info->debug) bf_comment(info, out, "+");
-            val_accum++;
-            break;
-        case '-':
-            if(info->debug) bf_comment(info, out, "-");
-            val_accum--;
-            break;
-        case '[':
-            bf_branch_begin(info, out, &branch_info);
-            break;
-        case ']':
-            bf_branch_end(info, out, &branch_info);
-            break;
-        case '.':
-            if(info->debug) bf_comment(info, out, ".");
-            bf_write(info, out);
-            break;
-        case ',':
-            if(info->debug) bf_comment(info, out, ",");
-            bf_read(info, out);
+        case MODE_SKIP_BRANCH:
+            mode_skip_branch(info, &skip_branch_ctx, &state, c, out);
             break;
         default:
-            // ignore
-            continue;
+            error("runtime error; invalid mode");
         }
-    }
 
-    // TEMP: Assert that accumulations are empty.
-    assert(mov_accum == 0);
-    assert(val_accum == 0);
+        if(IS_END(c)) break;
+    }
 
     // Writes the footer
     bf_footer(info, out);
+}
+
+void mode_normal(asm_info_t *ai, m_normal_ctx_t *ctx, unsigned char *sptr, int c, FILE *out) {
+    // if we have a move accumulation, and the character is not a
+    // continuation of that, or is the end, we must output it to the
+    // program.
+    if(ctx->mov_accum != 0 && (!IS_MOV(c) || IS_END(c))) {
+        DBG_INFO(ai, out, "move %d", ctx->mov_accum);
+
+        bf_move(ai, out, ctx->mov_accum);
+        ctx->mov_accum = 0;
+        ctx->skip_next_branch = false;
+    }
+
+    // if we have a value accumulation, and the character is not a
+    // continuation of that, or is the end, we must output it to the
+    // program.
+    if(ctx->val_accum != 0 && (!IS_VAL(c) || IS_END(c))) {
+        DBG_INFO(ai, out, "value %d", ctx->val_accum);
+
+        bf_value(ai, out, ctx->val_accum);
+        ctx->val_accum = 0;
+        ctx->skip_next_branch = false;
+    }
+
+    if(IS_END(c)) return;
+
+    switch ((char) c) {
+    case '>':
+        ctx->mov_accum++;
+        break;
+    case '<':
+        ctx->mov_accum--;
+        break;
+    case '+':
+        ctx->val_accum++;
+        break;
+    case '-':
+        ctx->val_accum--;
+        break;
+    case '[':
+        if(ctx->skip_next_branch) {
+            *sptr = MODE_SKIP_BRANCH;
+            return;
+        }
+
+        bf_branch_begin(ai, out, ctx->branch);
+        break;
+    case ']':
+        ctx->skip_next_branch = true;
+        bf_branch_end(ai, out, ctx->branch);
+        break;
+    case '.':
+        DBG_INFO(ai, out, "syscall write");
+        bf_write(ai, out);
+        ctx->skip_next_branch = false;
+        break;
+    case ',':
+        DBG_INFO(ai, out, "syscall read");
+        bf_read(ai, out);
+        ctx->skip_next_branch = false;
+        break;
+    }
+}
+
+void mode_skip_branch(asm_info_t *ai, m_skip_branch_ctx_t *ctx, unsigned char *sptr, int c, FILE *out) {
+    switch ((char) c) {
+    case '[':
+        ctx->branch_depth++;
+        break;
+    case ']':
+        if(ctx->branch_depth == 0) {
+            *sptr = MODE_NORMAL;
+        } else {
+            ctx->branch_depth--;
+        }
+        break;
+    case EOF:
+        error("mismatched brackets. aborting.");
+    }
 }
 
 void bf_header(asm_info_t *info, FILE *out) {

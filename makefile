@@ -6,7 +6,7 @@ OJBECTS=$(SOURCES:src/%.c=out/%.o)
 CFLAGS = -g -Werror
 LDFLAGS = -Isrc/
 
-.PHONY: build clean test
+.PHONY: build clean test install
 
 out/bfc: $(OJBECTS) | out
 	$(CC) -o out/bfc $^ $(LDFLAGS)
@@ -18,10 +18,19 @@ out:
 	mkdir -p out
 
 build: out/bfc
+	chmod +x out/bfc
 
 # run test.sh
 test: build
-	./test.sh
+	./check.sh out/bfc
 
 clean:
 	rm -rf out/
+
+ifeq ($(PREFIX),)
+    PREFIX := /usr/local
+endif
+
+install: build
+	install -d $(DESTDIR)$(PREFIX)/bin/
+	install -m +x out/bfc $(DESTDIR)$(PREFIX)/bin/

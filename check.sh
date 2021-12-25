@@ -9,10 +9,12 @@
 
 # usage: check.sh out/bfc
 
-ERR=`tput setaf 9`
-INFO=`tput setaf 11`
-OK=`tput setaf 10`
-NORM=`tput sgr0`
+if [ $# -le 2 ] || [ $2 != "nocolor" ]; then
+    ERR=`tput setaf 9`
+    INFO=`tput setaf 11`
+    OK=`tput setaf 10`
+    NORM=`tput sgr0`
+fi
 
 BFC=$1
 TMPDIR=$(mktemp -d)

@@ -22,7 +22,7 @@ build: out/bfc
 
 # run test.sh
 test: build
-	./check.sh out/bfc
+	./check.sh out/bfc nocolor
 
 clean:
 	rm -rf out/

@@ -2,7 +2,8 @@
 ### A simple brainfuck compiler written in C
 Olle Lögdahl, 25 December 2021
 
-![make](https://img.shields.io/github/workflow/status/ollelogdahl/bfc/build)
+[![build](https://github.com/ollelogdahl/bfc/actions/workflows/build.yml/badge.svg)](https://github.com/ollelogdahl/bfc/actions/workflows/build.yml)
+[![test](https://github.com/ollelogdahl/bfc/actions/workflows/test.yml/badge.svg)](https://github.com/ollelogdahl/bfc/actions/workflows/test.yml)
 ![licence](https://img.shields.io/github/license/ollelogdahl/bfc)
 
 ---

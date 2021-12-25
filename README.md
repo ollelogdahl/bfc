@@ -3,7 +3,6 @@
 Olle Lögdahl, 25 December 2021
 
 [![build](https://github.com/ollelogdahl/bfc/actions/workflows/build.yml/badge.svg)](https://github.com/ollelogdahl/bfc/actions/workflows/build.yml)
-[![test](https://github.com/ollelogdahl/bfc/actions/workflows/test.yml/badge.svg)](https://github.com/ollelogdahl/bfc/actions/workflows/test.yml)
 ![licence](https://img.shields.io/github/license/ollelogdahl/bfc)
 
 ---

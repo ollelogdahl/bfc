@@ -1,0 +1,8 @@
++abcdefg
+-abcdefg
+%
+
+note that \0 is parsed as EOF, and is therefore not allowed.
++AbC\ndE1337
+-AbC\ndE1337
+%

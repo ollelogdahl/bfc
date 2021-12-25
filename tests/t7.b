@@ -1,2 +1,2 @@
-consumes all stdin and writes to stdout
+consumes all stdin and copies to stdout
 ,[.[-],]

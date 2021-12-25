@@ -1,0 +1,2 @@
+reverses input
+>,[>,]<[.<]

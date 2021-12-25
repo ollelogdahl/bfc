@@ -1,0 +1,2 @@
+consumes all stdin
+,[[-],]

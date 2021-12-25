@@ -3,7 +3,7 @@ HEADERS=$(shell find src/ -name '*.h')
 
 OJBECTS=$(SOURCES:src/%.c=out/%.o)
 
-CFLAGS = -g -Werror
+CFLAGS = -std=c99 -Werror
 LDFLAGS = -Isrc/
 
 .PHONY: build clean test install

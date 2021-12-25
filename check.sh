@@ -9,6 +9,11 @@
 
 # usage: check.sh out/bfc
 
+ERR=`tput setaf 9`
+INFO=`tput setaf 11`
+OK=`tput setaf 10`
+NORM=`tput sgr0`
+
 BFC=$1
 TMPDIR=$(mktemp -d)
 
@@ -31,7 +36,7 @@ for TFILE in tests/*.b ; do
     LINES=$(wc -l <"$TMPDIR/log")
     
     if [ $RC -ne 0 ] || [ $LINES -gt 0 ]; then
-        echo fail
+        "${ERR}fail${NORM}";
         cat $TMPDIR/log
         continue
     fi
@@ -61,11 +66,11 @@ for TFILE in tests/*.b ; do
             case $KEY in
             '+')
                 # Set expected result to the rule
-                printf ${LINE:1} > $EXP
+                printf "${LINE:1}" > $EXP
                 ;;
             '-')
                 # Set indata to the rule
-                printf ${LINE:1} > $IN
+                printf "${LINE:1}" > $IN
                 ;;
             '%')
                 # Start evaluating the rule
@@ -74,12 +79,15 @@ for TFILE in tests/*.b ; do
 
                 cmp -s $OUT $EXP || {
                     
-                    [ $ENCOUNTERED_FAIL -eq 1 ] || echo fail;
+                    [ $ENCOUNTERED_FAIL -eq 1 ] || echo "${ERR}fail${NORM}";
                     ENCOUNTERED_FAIL=1
 
-                    echo "unexpected output (scenario $SCENARIO_NO):";
-                    echo -e "\texpected:\t" $(od -x $EXP)
-                    echo -e "\tactual:  \t" $(od -x $OUT)
+                    echo "${ERR}unexpected output${NORM} (scenario $SCENARIO_NO):";
+
+                    echo -e "${INFO}\texpected:${NORM}"
+                    hexdump -C $EXP
+                    echo -e "${INFO}\tactual:${NORM}"
+                    hexdump -C $OUT
                     continue;
                 }
                 ;;
@@ -89,7 +97,7 @@ for TFILE in tests/*.b ; do
         [ $ENCOUNTERED_FAIL -eq 1 ] && continue;
     fi
 
-    echo ok
+    echo "${OK}ok${NORM}"
 done
 
 echo "ran" $TESTS_RAN "tests with" $SCENARIOS_RAN "scenarios."

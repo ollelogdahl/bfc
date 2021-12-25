@@ -18,18 +18,18 @@ the following:
 
 ```
 ./check.sh out/bfc nocolor
-rot13:	ok
-t10:	  ok
-t11:	  ok
-t12:	  ok
+rot13:  ok
+t10:    ok
+t11:    ok
+t12:    ok
 t1:     ok
-t3:	    ok
-t4:	    ok
-t5:	    ok
-t6:	    ok
-t7:	    ok
-t8:	    ok
-t9:	    ok
+t3:     ok
+t4:     ok
+t5:     ok
+t6:     ok
+t7:     ok
+t8:     ok
+t9:     ok
 ran 14 tests with 79 scenarios.
 ```
 

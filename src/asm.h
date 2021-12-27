@@ -21,6 +21,7 @@ typedef struct {
 void asm_move(asm_info_t *info, FILE *out, const int offset);
 void asm_diff(asm_info_t *info, FILE *out, const int diff);
 void asm_set(asm_info_t *info, FILE *out, const int value);
+void asm_copy(asm_info_t *info, FILE *out, const int offset);
 void asm_header(asm_info_t *info, FILE *out);
 void asm_footer(asm_info_t *info, FILE *out);
 void asm_write(asm_info_t *info, FILE *out);

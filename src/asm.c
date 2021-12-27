@@ -58,6 +58,13 @@ void asm_set(asm_info_t *info, FILE *out, const int value) {
     fprintf(out, "movb $%d, (%%rdi)\n", value);
 }
 
+void asm_copy(asm_info_t *info, FILE *out, const int offset) {
+    fprintf(out,
+    "movb (%%rdi), %%ah" NL
+    "addb %%ah, %d(%%rdi)" NL
+    , offset);
+}
+
 void asm_branch_begin(asm_info_t *info, FILE *out, const char *name) {
     fprintf(out,
     "movb (%%rdi), %%al" NL

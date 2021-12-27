@@ -7,13 +7,15 @@
 
 #include "parser.h"
 
+#include <stdbool.h>
 #include <assert.h>
 
 #include "err.h"
 
-void optimize_assign(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
-void optimize_empty(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
-void optimize_unreachable(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
+bool optimize_assign(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
+bool optimize_empty(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
+bool optimize_unreachable(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
+bool optimize_copy_to(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
 
 #define ASM_INFO(ai, out, ...) if(ai->debug) asm_comment(ai, out, __VA_ARGS__)
 
@@ -22,12 +24,10 @@ void parse_branch(asm_info_t *asm_info, toklist_t *tokens, FILE *out, unsigned o
 
     for(unsigned i = offset; i < tokens->count; ++i) {
         // run all optimizers
-        optimize_empty(tokens, &i, asm_info, out);
-        if(i == tokens->count) break;
-        optimize_assign(tokens, &i, asm_info, out);
-        if(i == tokens->count) break;
-        optimize_unreachable(tokens, &i, asm_info, out);
-        if(i == tokens->count) break;
+        if(optimize_empty(tokens, &i, asm_info, out)) continue;
+        if(optimize_assign(tokens, &i, asm_info, out)) continue;
+        if(optimize_unreachable(tokens, &i, asm_info, out)) continue;
+        if(optimize_copy_to(tokens, &i, asm_info, out)) continue;
 
         tok_t *tok = tokens->items[i];
         switch (tok->type) {
@@ -48,10 +48,10 @@ void parse_branch(asm_info_t *asm_info, toklist_t *tokens, FILE *out, unsigned o
             asm_write(asm_info, out);
             break;
         case BRANCH:
-            ASM_INFO(asm_info, out, "branch %d begin", tok->n);
+            ASM_INFO(asm_info, out, "branch %s begin", tok->n);
             asm_branch_begin(asm_info, out, tok->n);
             parse_branch(asm_info, tok->children, out, 0);
-            ASM_INFO(asm_info, out, "branch %d end", tok->n);
+            ASM_INFO(asm_info, out, "branch %s end", tok->n);
             asm_branch_end(asm_info, out, tok->n);
             break;
         }
@@ -79,42 +79,95 @@ void parse(asm_info_t *asm_info, toklist_t *tokens, FILE *out) {
     asm_footer(asm_info, out);
 }
 
+
+#define TGETC(l, i) l->children->items[i]
+
+#define IS_INC(t) (t->type == MOD && t->i == 1)
+#define IS_DEC(t) (t->type == MOD && t->i == -1)
+#define IS_MOV(t) (t->type == MOV)
+#define IS_MOV_WITH(t, v) (t->type == MOV && t->i == v)
+
 /**
  * [-] is an assign to 0 call.
  */
-void optimize_assign(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out) {
-    if(tokens->items[*ind]->type != BRANCH) return;
+bool optimize_assign(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out) {
+    if(tokens->items[*ind]->type != BRANCH) return false;
     toklist_t *lst = tokens->items[*ind]->children;
-    if(lst->count != 1) return;
+    if(lst->count != 1) return false;
 
     if(lst->items[0]->type == MOD && lst->items[0]->i == -1) {
         ASM_INFO(info, out, "optimized '[-]' into a 0 assignment");
         asm_set(info, out, 0);
-        (*ind)++;
+        return true;
     }
 }
 
 /**
  * [] should be removed
  */
-void optimize_empty(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out) {
-    if(tokens->items[*ind]->type != BRANCH) return;
-    if(tokens->items[*ind]->children->count == 0) {
+bool optimize_empty(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out) {
+    tok_t *root = tokens->items[*ind];
+    if(root->type == BRANCH && root->children->count == 0) {
         ASM_INFO(info, out, "optimized away empty branch");
-        (*ind)++;
+        return true;
     }
+
+    return false;
 }
 
 /**
  * [+++>-<][] second parenthesis can be removed.
  * There needs to be some assignment or movement before a new branch.
  */
-void optimize_unreachable(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out) {
-    if(*ind == 0) return;
+bool optimize_unreachable(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out) {
+    if(*ind == 0) return false;
     tok_t *prev = tokens->items[*ind - 1];
     tok_t *curr = tokens->items[*ind];
     if(prev->type == BRANCH && curr->type == BRANCH) {
         ASM_INFO(info, out, "optimized away unreachable branch");
-        (*ind)++;
+        return true;
     }
+
+    return false;
+}
+
+/**
+ * [-a+b] copies all from current cell to +a, and clears current cell in process.
+ * 
+ * synonyms:
+ * [>>>+<<<-]
+ * [->>>+<<<]
+ */
+bool optimize_copy_to(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out) {
+    tok_t *root = tokens->items[*ind];
+    if(root->type == BRANCH && root->children->count == 4) {
+        int move_size = 0;
+
+        tok_t *first = TGETC(root, 0);
+        tok_t *second = TGETC(root, 1);
+        tok_t *third = TGETC(root, 2);
+        tok_t *fourth = TGETC(root, 3);
+
+        if(IS_MOV(first)) {
+            move_size = first->i;
+            
+            if(IS_INC(second) && IS_MOV_WITH(third, -move_size) && IS_DEC(fourth)) {
+                ASM_INFO(info, out, "optimized copy to (%d)", move_size);
+                asm_copy(info, out, move_size);
+                asm_set(info, out, 0);
+                return true;
+            }
+        } else if(IS_MOV(second)) {
+            move_size = second->i;
+
+            if(IS_DEC(first) && IS_INC(third) && IS_MOV_WITH(fourth, -move_size)) {
+                ASM_INFO(info, out, "optimized copy to (%d)", move_size);
+                asm_copy(info, out, move_size);
+                asm_set(info, out, 0);
+                return true;
+            }
+        }
+    }
+
+    return false;
 }

@@ -14,7 +14,8 @@
 #include <stdbool.h>
 #include <sys/wait.h>
 
-#include "asm.h"
+#include "token.h"
+#include "parser.h"
 #include "err.h"
 
 #define VERSION "0.1.1"
@@ -38,6 +39,8 @@ void version(FILE *fp) {
 
 pid_t spawn_parser(asm_info_t *info, FILE *in, int *pipe);
 pid_t spawn_assembler(asm_info_t *info, int in_fd, char *outfile);
+
+#include "token.h"
 
 int main(const int argc, char *const *argv) {
 
@@ -88,7 +91,7 @@ int main(const int argc, char *const *argv) {
 
     // peek at the first character and see if the file is empty.
     int c = fgetc(fp);
-    if(c == EOF) error("no input to compile, exiting");
+    if(c == EOF) error("no input to compile, exiting.");
     ungetc(c, fp);
 
     asm_info_t info = {
@@ -110,7 +113,11 @@ int main(const int argc, char *const *argv) {
     } else {
         FILE *out = fopen(outfile, "w");
         if(out == NULL) sys_error("fopen %s", outfile);
-        bf_to_asm(&info, fp, out);
+        
+        toklist_t tokens = TOKLIST_INIT;
+        tokenize(&tokens, fp);
+
+        parse(&info, &tokens, out);
     }
 
     return 0;
@@ -125,7 +132,11 @@ pid_t spawn_parser(asm_info_t *info, FILE *in, int *pipe) {
         FILE *out = fdopen(pipe[1], "w");
         if(out == NULL) sys_error("fdopen pipe write-end");
 
-        bf_to_asm(info, in, out);
+        // tokenize
+        toklist_t tokens = TOKLIST_INIT;
+        tokenize(&tokens, in);
+
+        parse(info, &tokens, out);
         fclose(out);
 
         exit(EXIT_SUCCESS);

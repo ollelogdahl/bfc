@@ -18,11 +18,14 @@ typedef struct {
     } eof_handling;
 } asm_info_t;
 
-/**
- * Reads all characters from in, and processes them into
- * assembly. Writes the processed assembly to out.
- * @param info Information about how to assemble
- * @param in The file to read bf code from
- * @param out The file to write assembly to
- */
-void bf_to_asm(asm_info_t *info, FILE *in, FILE *out);
+void asm_move(asm_info_t *info, FILE *out, const int offset);
+void asm_diff(asm_info_t *info, FILE *out, const int diff);
+void asm_set(asm_info_t *info, FILE *out, const int value);
+void asm_header(asm_info_t *info, FILE *out);
+void asm_footer(asm_info_t *info, FILE *out);
+void asm_write(asm_info_t *info, FILE *out);
+void asm_read(asm_info_t *info, FILE *out);
+void asm_branch_begin(asm_info_t *info, FILE *out, const char *name);
+void asm_branch_end(asm_info_t *info, FILE *out, const char *name);
+
+void asm_comment(asm_info_t *info, FILE *out, char *fmt, ...);

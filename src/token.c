@@ -240,10 +240,10 @@ void print_tok_tree_part(toklist_t *list, FILE *out, unsigned depth) {
         }
 
         if(tok->type == BRANCH) {
-            printf("%*s%s: n='%s'\n", depth, "", name, tok->i, tok->n);
+            printf("%*s%s: n='%s'\n", depth, "", name, tok->n);
             print_tok_tree_part(tok->children, out, depth + 2);
         } else {
-            printf("%*s%s: i=%d\n", depth, "", name, tok->i, tok->n);
+            printf("%*s%s: i=%d\n", depth, "", name, tok->i);
         }
     }
 }

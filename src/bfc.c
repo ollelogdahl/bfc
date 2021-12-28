@@ -20,25 +20,11 @@
 
 #define VERSION "0.1.1"
 
-void help(FILE *fp, char *const cmd) {
-    fprintf(fp, "usage: %s [-gShv] [-o out_file] file\n"
-        "  S        skips the assembler and only outputs the generated assembly.\n"
-        "  g        generates assembly with comments about the bf instructions.\n"
-        "  o file   the file to write the assembly/linkable object to.\n"
-        "  h        shows this.\n"
-        "  v        shows the version of the program.\n\n"
-        "Report bugs to: olle@logdahl.net\n"
-    , cmd);
-}
-
-void version(FILE *fp) {
-    fprintf(fp, "bfc version %s\n"
-        "Copyright (C) 2021 Olle Lögdahl.\n"
-    , VERSION);
-}
+void help(FILE *fp, char *const cmd);
+void version(FILE *fp);
 
 pid_t spawn_parser(asm_info_t *info, FILE *in, int *pipe);
-pid_t spawn_assembler(asm_info_t *info, int in_fd, char *outfile);
+pid_t spawn_assembler(asm_info_t *info, int in_fd, const char *outfile);
 
 #include "token.h"
 
@@ -146,7 +132,7 @@ pid_t spawn_parser(asm_info_t *info, FILE *in, int *pipe) {
     return pid;
 }
 
-pid_t spawn_assembler(asm_info_t *info, int in_fd, char *outfile) {
+pid_t spawn_assembler(asm_info_t *info, int in_fd, const char *outfile) {
     pid_t pid = fork();
     switch (pid) {
     case -1: sys_error("fork assembler");
@@ -158,4 +144,21 @@ pid_t spawn_assembler(asm_info_t *info, int in_fd, char *outfile) {
     
     close(in_fd);
     return pid;
+}
+
+void help(FILE *fp, char *const cmd) {
+    fprintf(fp, "usage: %s [-gShv] [-o out_file] file\n"
+        "  S        skips the assembler and only outputs the generated assembly.\n"
+        "  g        generates assembly with comments about the bf instructions.\n"
+        "  o file   the file to write the assembly/linkable object to.\n"
+        "  h        shows this.\n"
+        "  v        shows the version of the program.\n\n"
+        "Report bugs to: olle@logdahl.net\n"
+    , cmd);
+}
+
+void version(FILE *fp) {
+    fprintf(fp, "bfc version %s\n"
+        "Copyright (C) 2021 Olle Lögdahl.\n"
+    , VERSION);
 }

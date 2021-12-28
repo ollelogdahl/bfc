@@ -9,6 +9,7 @@
 
 #include <stdbool.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include "err.h"
 
@@ -18,6 +19,14 @@ bool optimize_unreachable(toklist_t *tokens, unsigned *ind, asm_info_t *info, FI
 bool optimize_copy_to(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
 bool optimize_multiply_to(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
 
+bool(*optimizers[])(toklist_t *, unsigned *, asm_info_t *, FILE *) = {
+    optimize_assign,
+    optimize_empty,
+    optimize_unreachable,
+    optimize_copy_to,
+    optimize_multiply_to
+};
+
 #define ASM_INFO(ai, out, ...) if(ai->debug) asm_comment(ai, out, __VA_ARGS__)
 
 void parse_branch(asm_info_t *asm_info, toklist_t *tokens, FILE *out, unsigned offset) {
@@ -25,11 +34,9 @@ void parse_branch(asm_info_t *asm_info, toklist_t *tokens, FILE *out, unsigned o
 
     for(unsigned i = offset; i < tokens->count; ++i) {
         // run all optimizers
-        if(optimize_empty(tokens, &i, asm_info, out)) continue;
-        if(optimize_assign(tokens, &i, asm_info, out)) continue;
-        if(optimize_unreachable(tokens, &i, asm_info, out)) continue;
-        if(optimize_copy_to(tokens, &i, asm_info, out)) continue;
-        if(optimize_multiply_to(tokens, &i, asm_info, out)) continue;
+        for(unsigned j = 0; j < sizeof optimizers / sizeof optimizers[0]; ++j) {
+            if((*optimizers[j])(tokens, &i, asm_info, out)) continue;
+        }
 
         tok_t *tok = tokens->items[i];
         switch (tok->type) {
@@ -55,6 +62,8 @@ void parse_branch(asm_info_t *asm_info, toklist_t *tokens, FILE *out, unsigned o
             parse_branch(asm_info, tok->children, out, 0);
             ASM_INFO(asm_info, out, "branch %s end", tok->n);
             asm_branch_end(asm_info, out, tok->n);
+
+            free(tok->n);
             break;
         }
     }

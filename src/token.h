@@ -36,5 +36,6 @@ typedef struct toklist_t {
 #define TOKLIST_INIT { .capacity = 0, .count = 0, .items = NULL }
 
 void tokenize(toklist_t *list, FILE *in);
+void toklist_free(toklist_t *list);
 
 void print_tok_tree(toklist_t *list, FILE *out);

@@ -34,7 +34,7 @@ void tokenize(toklist_t *list, FILE *in) {
     int mod_accum = 0;
 
     tok_t root = {
-        .n = "",
+        .n = "abba",
         .children = list,
     };
 
@@ -181,7 +181,8 @@ char *create_branch_name(tok_t *root, unsigned branch_no) {
 
     size_t root_len = strlen(root->n);
     memcpy(str, root->n, root_len);
-    encode(str + root_len, 100 - root_len, branch_no);
+    root_len += encode(str + root_len, 100 - root_len, branch_no);
+    str[root_len] = '\0';
 
     return str;
 }
@@ -194,6 +195,20 @@ toklist_t *toklist_create(void) {
     list->items = NULL;
 
     return list;
+}
+
+void toklist_free(toklist_t *list) {
+    for(int i = 0; i < list->count; ++i) {
+        tok_t *curr = list->items[i];
+        if(curr->children != NULL) {
+            toklist_free(curr->children);
+            free(curr->children);
+        }
+        
+        free(curr);
+    }
+
+    free(list->items);
 }
 
 void toklist_add(toklist_t *list, tok_t *tok) {

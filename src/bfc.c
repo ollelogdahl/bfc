@@ -102,8 +102,10 @@ int main(const int argc, char *const *argv) {
         
         toklist_t tokens = TOKLIST_INIT;
         tokenize(&tokens, fp);
+        fclose(fp);
 
         parse(&info, &tokens, out);
+        toklist_free(&tokens);
     }
 
     return 0;
@@ -121,12 +123,16 @@ pid_t spawn_parser(asm_info_t *info, FILE *in, int *pipe) {
         // tokenize
         toklist_t tokens = TOKLIST_INIT;
         tokenize(&tokens, in);
+        fclose(in);
 
         parse(info, &tokens, out);
+        toklist_free(&tokens);
         fclose(out);
 
         exit(EXIT_SUCCESS);
     }
+
+    fclose(in);
 
     close(pipe[1]);
     return pid;

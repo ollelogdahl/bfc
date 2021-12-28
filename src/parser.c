@@ -16,6 +16,7 @@ bool optimize_assign(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *o
 bool optimize_empty(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
 bool optimize_unreachable(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
 bool optimize_copy_to(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
+bool optimize_multiply_to(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out);
 
 #define ASM_INFO(ai, out, ...) if(ai->debug) asm_comment(ai, out, __VA_ARGS__)
 
@@ -28,6 +29,7 @@ void parse_branch(asm_info_t *asm_info, toklist_t *tokens, FILE *out, unsigned o
         if(optimize_assign(tokens, &i, asm_info, out)) continue;
         if(optimize_unreachable(tokens, &i, asm_info, out)) continue;
         if(optimize_copy_to(tokens, &i, asm_info, out)) continue;
+        if(optimize_multiply_to(tokens, &i, asm_info, out)) continue;
 
         tok_t *tok = tokens->items[i];
         switch (tok->type) {
@@ -167,6 +169,72 @@ bool optimize_copy_to(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *
                 return true;
             }
         }
+    }
+
+    return false;
+}
+
+/**
+ * a special case of copy to multiple destinations.
+ * 
+ * synonyms:
+ * [->++>>>+>>>>+++<<<<<<<<]
+ * [>++>>>+>>>>+++<<<<<<<<-]
+ */
+bool optimize_multiply_to(toklist_t *tokens, unsigned *ind, asm_info_t *info, FILE *out) {
+    tok_t *root = tokens->items[*ind];
+    if(root->type == BRANCH) {
+        // ensure that the block begin/ends with a decrement
+        unsigned start, end, offset;
+        if(IS_DEC(TGETC(root, 0))) {
+            start = 1;
+            end = root->children->count - 1;
+        } else if(IS_DEC(TGETC(root, root->children->count - 1))) {
+            start = 0;
+            end = root->children->count - 2;
+        } else return false;
+
+        // ensure there is an odd amount of tokens
+        if((end + 1 - start) % 2 == 0) return false;
+        unsigned operations = (end - start) / 2;
+
+        // read and store
+        int moves_tot = 0;
+        int moves[operations];
+        int factors[operations];
+        
+        for(unsigned i = 0; i < operations; ++i) {
+            unsigned off = start + i*2;
+
+            tok_t *a = root->children->items[off];
+            tok_t *b = root->children->items[off + 1];
+
+            if(a->type != MOV || b->type != MOD) return false;
+
+            moves[i] = a->i;
+            factors[i] = b->i;
+
+            moves_tot += a->i;
+
+            // we might have modified the starting cell in a more
+            // advanced loop. forbid this.
+            if(moves_tot == 0) return false;
+        }
+
+        // ensure that the last move placed us at start.
+        tok_t *ptr_restore = TGETC(root, end);
+        if(!IS_MOV_WITH(ptr_restore, -moves_tot)) return false;
+
+        ASM_INFO(info, out, "optimizing %u multiplications", operations);
+
+        int mov_accum = 0;
+        for(int i = 0; i < operations; ++i) {
+            mov_accum += moves[i];
+            asm_mult(info, out, factors[i], mov_accum);
+        }
+
+        asm_set(info, out, 0);
+        return true;
     }
 
     return false;

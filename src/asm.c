@@ -65,6 +65,14 @@ void asm_copy(asm_info_t *info, FILE *out, const int offset) {
     , offset);
 }
 
+void asm_mult(asm_info_t *info, FILE *out, const int factor, const int offset) {
+    fprintf(out,
+    "movb $%d, %%al" NL
+    "imulb (%%rdi)" NL
+    "addb %%al, %d(%%rdi)" NL
+    , factor, offset);
+}
+
 void asm_branch_begin(asm_info_t *info, FILE *out, const char *name) {
     fprintf(out,
     "movb (%%rdi), %%al" NL

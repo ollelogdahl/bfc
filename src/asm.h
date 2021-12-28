@@ -21,7 +21,18 @@ typedef struct {
 void asm_move(asm_info_t *info, FILE *out, const int offset);
 void asm_diff(asm_info_t *info, FILE *out, const int diff);
 void asm_set(asm_info_t *info, FILE *out, const int value);
+
+/**
+ * Performs a copy of the value at the current cell into another cell with
+ * offset.
+ */
 void asm_copy(asm_info_t *info, FILE *out, const int offset);
+
+/**
+ * performs a multiplication to the current cell value with factor and
+ * stores the result in a cell with offset.
+ */
+void asm_mult(asm_info_t *info, FILE *out, const int factor, const int offset);
 void asm_header(asm_info_t *info, FILE *out);
 void asm_footer(asm_info_t *info, FILE *out);
 void asm_write(asm_info_t *info, FILE *out);

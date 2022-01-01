@@ -22,15 +22,18 @@ void asm_header(asm_info_t *info, FILE *out) {
     // %rdi stores the data pointer. %rsp stores the stack pointer, and
     // %rbp stores the base pointer.
     fprintf(out,
+    ".section .bss" NL
+    ".skip %d" NL
+    "tape_mid:" NL
+    ".skip %d" NL
+    "tape_start:" NL
     ".section .text" NL
     ".global _start" NL
     "_start:" NL
-    "movq %%rsp, %%rax" NL
-    "subq $%d, %%rsp" NL
-    "movq %%rsp, %%rdi" NL
-    "addq $%d, %%rdi" NL
+    "lea tape_start, %%rsp" NL
+    "lea tape_mid, %%rdi" NL
     "_program:" NL
-    , 2 * info->stack_size, info->stack_size);
+    , info->stack_size, info->stack_size);
 }
 
 void asm_footer(asm_info_t *info, FILE *out) {

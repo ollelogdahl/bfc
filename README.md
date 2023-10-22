@@ -1,5 +1,5 @@
 # bfc
-### A simple brainfuck compiler written in C
+### A simple optimizing brainfuck compiler written in C
 Olle Lögdahl, 25 December 2021
 
 [![build](https://github.com/ollelogdahl/bfc/actions/workflows/build.yml/badge.svg)](https://github.com/ollelogdahl/bfc/actions/workflows/build.yml)
@@ -11,6 +11,9 @@ Olle Lögdahl, 25 December 2021
 produce x86_64 assembly. The compiler may also call `as` to compile the
 assembly into a linkable object. Written as a one day project, it's purely
 for educational purposes.
+
+The compiler also implements some (albeit very simple) optimizations using
+patterns (`[-]` can be optimized as a set 0 for example).
 
 ## Building & Usage
 
